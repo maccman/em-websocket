@@ -1,6 +1,6 @@
 Based on: http://github.com/igrigorik/em-websocket
 
-Gives you three new messages in your EM Connection:
+Gives you three new methods in your EM Connection:
   * websocket_post_init
   * receive_message(msg_string)
   * send_message(msg_string)
