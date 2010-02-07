@@ -1,0 +1,23 @@
+Based on: http://github.com/igrigorik/em-websocket
+
+Gives you three new messages in your EM Connection:
+  * websocket_post_init
+  * receive_message(msg_string)
+  * send_message(msg_string)
+  
+You can override the first two.
+
+Example:
+
+require "em-websocket"
+
+class MyConnection < EM::WebSocket::Connection
+  def websocket_post_init
+  end
+  
+  def receive_message(msg)
+    send_message("HI")
+  end
+end
+
+More information: http://www.igvita.com/2009/12/22/ruby-websockets-tcp-for-the-browser/

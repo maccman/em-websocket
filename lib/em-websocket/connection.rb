@@ -8,34 +8,26 @@ module EventMachine
       HEADER = /^([^:]+):\s*([^$]+)/
 
       attr_reader :state, :request
+      
+      def websocket_post_init
+      end
+      
+      def receive_message(msg)
+      end
 
-      # define WebSocket callbacks
-      def onopen(&blk);     @onopen = blk;    end
-      def onclose(&blk);    @onclose = blk;   end
-      def onmessage(&blk);  @onmessage = blk; end
-
-      def initialize(options)
-        @options = options
-        @debug = options[:debug] || false
-        @state = :handshake
+      def post_init
+        @state   = :handshake
         @request = {}
-        @data = ''
-
-        debug [:initialize]
+        @data    = ''
       end
 
       def receive_data(data)
-        debug [:receive_data, data]
-
         @data << data
         dispatch
       end
 
       def unbind
-        debug [:unbind, :connection]
-
         @state = :closed
-        @onclose.call if @onclose
       end
 
       def dispatch
@@ -53,7 +45,6 @@ module EventMachine
 
       def new_request
         if @data.match(/\r\n\r\n$/)
-          debug [:inbound_headers, @data]
           lines = @data.split("\r\n")
 
           begin
@@ -70,18 +61,17 @@ module EventMachine
             end
   
             # transform headers
-            @request['Host'] = Addressable::URI.parse("ws://"+@request['Host'])
+            @request['Host'] = Addressable::URI.parse("ws://" + @request['Host'])
   
             if not websocket_connection?
               process_bad_request
               return false
             else
-              @data = ''
+              @data  = ''
               @state = :upgrade
               return true
             end
           rescue => e
-            debug [:error, e]
             process_bad_request
             return false
           end
@@ -112,25 +102,21 @@ module EventMachine
 
         # upgrade connection and notify client callback
         # about completed handshake
-        debug [:upgrade_headers, upgrade]
         send_data upgrade
 
         @state = :connected
-        @onopen.call if @onopen
+        websocket_post_init
 
         # stop dispatch, wait for messages
         false
       end
 
       def process_message
-        return if not @onmessage
-        debug [:message, @data]
-
         # slice the message out of the buffer and pass in
         # for processing, and buffer data otherwise
         while msg = @data.slice!(/\000([^\377]*)\377/)
           msg.gsub!(/^\x00|\xff$/, '')
-          @onmessage.call(msg)
+          receive_message(msg)
         end
 
         false
@@ -143,19 +129,8 @@ module EventMachine
       # an 0xFF byte. Per spec, we can also set the first
       # byte to a value betweent 0x80 and 0xFF, followed by
       # a leading length indicator
-      def send(data)
-        debug [:send, data]
+      def send_message(data)
         send_data("\x00#{data}\xff")
-      end
-
-      private
-
-      def debug(*data)
-        if @debug
-          require 'pp'
-          pp data
-          puts
-        end
       end
     end
   end
