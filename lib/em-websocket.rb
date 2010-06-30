@@ -1,4 +1,5 @@
 require "eventmachine"
 
 $:.unshift(File.dirname(__FILE__))
-require "em-websocket/connection"
+require "em-websocket/server"
+require "em-websocket/client"

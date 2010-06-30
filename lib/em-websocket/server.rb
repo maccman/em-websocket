@@ -2,7 +2,7 @@ require 'addressable/uri'
 
 module EventMachine
   module WebSocket
-    class Connection < EventMachine::Connection
+    class Server < EventMachine::Connection
 
       PATH   = /^GET (\/[^\s]*) HTTP\/1\.1$/
       HEADER = /^([^:]+):\s*([^$]+)/
