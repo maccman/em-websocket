@@ -3,7 +3,6 @@ require 'addressable/uri'
 module EventMachine
   module WebSocket
     class Client < EventMachine::Connection
-      PATH   = /^GET (\/[^\s]*) HTTP\/1\.1$/
       HEADER = /^([^:]+):\s*([^$]+)/
 
       attr_reader :state, :request
@@ -14,7 +13,7 @@ module EventMachine
       def receive_message(msg)
       end
 
-      def post_init
+      def connection_completed
         @state   = :handshake
         @request = {}
         @data    = ''
@@ -47,6 +46,7 @@ module EventMachine
 
           lines.each do |line|
             h = HEADER.match(line)
+            next unless h
             @request[h[1].strip] = h[2].strip
           end
             
@@ -70,11 +70,16 @@ module EventMachine
         close_connection_after_writing
         raise "Not a WebSocket endpoint"
       end
+      
+      def websocket_connection?
+        @request['Connection'] == 'Upgrade' and @request['Upgrade'] == 'WebSocket'
+      end
 
       def send_upgrade
-        upgrade =  "HTTP/1.1 101 Web Socket Protocol Handshake\r\n"
+        upgrade =  "GET / HTTP/1.1\r\n"
         upgrade << "Upgrade: WebSocket\r\n"
         upgrade << "Connection: Upgrade\r\n"
+        upgrade << "\r\n"
         send_data upgrade
       end
 
